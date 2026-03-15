@@ -2,13 +2,23 @@ import * as THREE from "three";
 import gsap from "gsap";
 
 export function setCharTimeline(
-  character: THREE.Object3D<THREE.Object3DEventMap> | null,
+  character: THREE.Object3D | null,
   camera: THREE.PerspectiveCamera
 ) {
+  if (!character) return;
+
+  // Check if landing section exists
+  const isLandingExist = !!document.querySelector(".landing-section");
+  if (!isLandingExist) {
+    console.warn("GSAP: .landing-section not found, skipping character timeline");
+    return;
+  }
+
   let intensity: number = 0;
   setInterval(() => {
     intensity = Math.random();
   }, 200);
+
   const tl1 = gsap.timeline({
     scrollTrigger: {
       trigger: ".landing-section",
@@ -36,8 +46,9 @@ export function setCharTimeline(
       invalidateOnRefresh: true,
     },
   });
+
   let screenLight: any, monitor: any;
-  character?.children.forEach((object: any) => {
+  character.children.forEach((object: any) => {
     if (object.name === "Plane004") {
       object.children.forEach((child: any) => {
         child.material.transparent = true;
@@ -60,9 +71,12 @@ export function setCharTimeline(
       screenLight = object;
     }
   });
-  let neckBone = character?.getObjectByName("spine005");
+
+  let neckBone = character.getObjectByName("spine005");
+
   if (window.innerWidth > 1024) {
-    if (character) {
+    // Only proceed if character and essential targets exist
+    if (character && document.querySelector(".character-model")) {
       tl1
         .fromTo(character.rotation, { y: 0 }, { y: 0.7, duration: 1 }, 0)
         .to(camera.position, { z: 22 }, 0)
@@ -71,78 +85,94 @@ export function setCharTimeline(
         .to(".landing-container", { y: "40%", duration: 0.8 }, 0)
         .fromTo(".about-me", { y: "-50%" }, { y: "0%" }, 0);
 
-      tl2
-        .to(
-          camera.position,
-          { z: 75, y: 8.4, duration: 6, delay: 2, ease: "power3.inOut" },
-          0
-        )
-        .to(".about-section", { y: "30%", duration: 6 }, 0)
-        .to(".about-section", { opacity: 0, delay: 3, duration: 2 }, 0)
-        .fromTo(
-          ".character-model",
-          { pointerEvents: "inherit" },
-          { pointerEvents: "none", x: "-12%", delay: 2, duration: 5 },
-          0
-        )
-        .to(character.rotation, { y: 0.92, x: 0.12, delay: 3, duration: 3 }, 0)
-        .to(neckBone!.rotation, { x: 0.6, delay: 2, duration: 3 }, 0)
-        .to(monitor.material, { opacity: 1, duration: 0.8, delay: 3.2 }, 0)
-        .to(screenLight.material, { opacity: 1, duration: 0.8, delay: 4.5 }, 0)
-        .fromTo(
-          ".what-box-in",
-          { display: "none" },
-          { display: "flex", duration: 0.1, delay: 6 },
-          0
-        )
-        .fromTo(
-          monitor.position,
-          { y: -10, z: 2 },
-          { y: 0, z: 0, delay: 1.5, duration: 3 },
-          0
-        )
-        .fromTo(
-          ".character-rim",
-          { opacity: 1, scaleX: 1.4 },
-          { opacity: 0, scale: 0, y: "-70%", duration: 5, delay: 2 },
-          0.3
-        );
+      // Check if about-section targets exist for tl2
+      if (document.querySelector(".about-section") && monitor && screenLight && neckBone) {
+        tl2
+          .to(
+            camera.position,
+            { z: 75, y: 8.4, duration: 6, delay: 2, ease: "power3.inOut" },
+            0
+          )
+          .to(".about-section", { y: "30%", duration: 6 }, 0)
+          .to(".about-section", { opacity: 0, delay: 3, duration: 2 }, 0)
+          .fromTo(
+            ".character-model",
+            { pointerEvents: "inherit" },
+            { pointerEvents: "none", x: "-12%", delay: 2, duration: 5 },
+            0
+          )
+          .to(character.rotation, { y: 0.92, x: 0.12, delay: 3, duration: 3 }, 0)
+          .to(neckBone.rotation, { x: 0.6, delay: 2, duration: 3 }, 0)
+          .to(monitor.material, { opacity: 1, duration: 0.8, delay: 3.2 }, 0)
+          .to(screenLight.material, { opacity: 1, duration: 0.8, delay: 4.5 }, 0)
+          .fromTo(
+            ".what-box-in",
+            { display: "none" },
+            { display: "flex", duration: 0.1, delay: 6 },
+            0
+          )
+          .fromTo(
+            monitor.position,
+            { y: -10, z: 2 },
+            { y: 0, z: 0, delay: 1.5, duration: 3 },
+            0
+          )
+          .fromTo(
+            ".character-rim",
+            { opacity: 1, scaleX: 1.4 },
+            { opacity: 0, scale: 0, y: "-70%", duration: 5, delay: 2 },
+            0.3
+          );
+      }
 
-      tl3
-        .fromTo(
-          ".character-model",
-          { y: "0%" },
-          { y: "-100%", duration: 4, ease: "none", delay: 1 },
-          0
-        )
-        .fromTo(".whatIDO", { y: 0 }, { y: "15%", duration: 2 }, 0)
-        .to(character.rotation, { x: -0.04, duration: 2, delay: 1 }, 0);
+      // Check if whatIDO exists for tl3
+      if (document.querySelector(".whatIDO")) {
+        tl3
+          .fromTo(
+            ".character-model",
+            { y: "0%" },
+            { y: "-100%", duration: 4, ease: "none", delay: 1 },
+            0
+          )
+          .fromTo(".whatIDO", { y: 0 }, { y: "15%", duration: 2 }, 0)
+          .to(character.rotation, { x: -0.04, duration: 2, delay: 1 }, 0);
+      }
     }
   } else {
-    // Mobile-specific animations to match desktop experience quality
-    if (character) {
+    // Mobile-specific defensive checks
+    if (character && document.querySelector(".character-model")) {
       tl1
         .to(character.scale, { x: 0.8, y: 0.8, z: 0.8, duration: 1 }, 0)
         .to(camera.position, { z: 28, duration: 1 }, 0)
         .to(".character-model", { opacity: 0.5, duration: 0.8 }, 0);
 
-      tl2
-        .to(character.rotation, { y: 0.5, duration: 2 }, 0)
-        .to(".about-section", { opacity: 0, duration: 2, delay: 1 }, 0);
+      if (document.querySelector(".about-section")) {
+        tl2
+          .to(character.rotation, { y: 0.5, duration: 2 }, 0)
+          .to(".about-section", { opacity: 0, duration: 2, delay: 1 }, 0);
+      }
 
-      const tM2 = gsap.timeline({
-        scrollTrigger: {
-          trigger: ".what-box-in",
-          start: "top 80%",
-          end: "bottom top",
-        },
-      });
-      tM2.to(".what-box-in", { display: "flex", duration: 0.1, delay: 0 }, 0);
+      if (document.querySelector(".what-box-in")) {
+        const tM2 = gsap.timeline({
+          scrollTrigger: {
+            trigger: ".what-box-in",
+            start: "top 80%",
+            end: "bottom top",
+          },
+        });
+        tM2.to(".what-box-in", { display: "flex", duration: 0.1, delay: 0 }, 0);
+      }
     }
   }
 }
 
 export function setAllTimeline() {
+  const careerSection = document.querySelector(".career-section");
+  if (!careerSection) {
+    console.warn("GSAP: .career-section not found, skipping all timeline");
+    return;
+  }
+
   const careerTimeline = gsap.timeline({
     scrollTrigger: {
       trigger: ".career-section",
@@ -152,27 +182,35 @@ export function setAllTimeline() {
       invalidateOnRefresh: true,
     },
   });
-  careerTimeline
-    .fromTo(
-      ".career-timeline",
-      { maxHeight: "10%" },
-      { maxHeight: "100%", duration: 0.5 },
-      0
-    )
 
-    .fromTo(
-      ".career-timeline",
-      { opacity: 0 },
-      { opacity: 1, duration: 0.1 },
-      0
-    )
-    .fromTo(
+  // Check if inner targets exist
+  if (document.querySelector(".career-timeline")) {
+    careerTimeline
+      .fromTo(
+        ".career-timeline",
+        { maxHeight: "10%" },
+        { maxHeight: "100%", duration: 0.5 },
+        0
+      )
+      .fromTo(
+        ".career-timeline",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.1 },
+        0
+      );
+  }
+
+  if (document.querySelector(".career-info-box")) {
+    careerTimeline.fromTo(
       ".career-info-box",
       { opacity: 0 },
       { opacity: 1, stagger: 0.1, duration: 0.5 },
       0
-    )
-    .fromTo(
+    );
+  }
+
+  if (document.querySelector(".career-dot")) {
+    careerTimeline.fromTo(
       ".career-dot",
       { animationIterationCount: "infinite" },
       {
@@ -182,19 +220,13 @@ export function setAllTimeline() {
       },
       0
     );
+  }
 
   if (window.innerWidth > 1024) {
     careerTimeline.fromTo(
       ".career-section",
       { y: 0 },
       { y: "20%", duration: 0.5, delay: 0.2 },
-      0
-    );
-  } else {
-    careerTimeline.fromTo(
-      ".career-section",
-      { y: 0 },
-      { y: 0, duration: 0.5, delay: 0.2 },
       0
     );
   }
