@@ -119,11 +119,21 @@ export function setCharTimeline(
         .to(character.rotation, { x: -0.04, duration: 2, delay: 1 }, 0);
     }
   } else {
+    // Mobile-specific animations to match desktop experience quality
     if (character) {
+      tl1
+        .to(character.scale, { x: 0.8, y: 0.8, z: 0.8, duration: 1 }, 0)
+        .to(camera.position, { z: 28, duration: 1 }, 0)
+        .to(".character-model", { opacity: 0.5, duration: 0.8 }, 0);
+
+      tl2
+        .to(character.rotation, { y: 0.5, duration: 2 }, 0)
+        .to(".about-section", { opacity: 0, duration: 2, delay: 1 }, 0);
+
       const tM2 = gsap.timeline({
         scrollTrigger: {
           trigger: ".what-box-in",
-          start: "top 70%",
+          start: "top 80%",
           end: "bottom top",
         },
       });
