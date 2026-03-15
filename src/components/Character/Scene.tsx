@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import setCharacter from "./utils/character";
 import setLighting from "./utils/lighting";
@@ -19,7 +19,7 @@ const Scene = () => {
   const sceneRef = useRef(new THREE.Scene());
   const { setLoading } = useLoading();
 
-  const [character, setChar] = useState<THREE.Object3D | null>(null);
+  // No longer using reactive state for character to avoid re-renders
 
   useEffect(() => {
     if (canvasDiv.current) {
@@ -30,15 +30,16 @@ const Scene = () => {
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
-        antialias: false, // Turned off for performance boost
+        antialias: true,
         powerPreference: "high-performance",
       });
       renderer.setSize(container.width, container.height);
-      // Cap pixel ratio to 2 for performance on high-DPI mobile devices
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1;
-      canvasDiv.current.appendChild(renderer.domElement);
+
+      const canvasCurrent = canvasDiv.current;
+      canvasCurrent.appendChild(renderer.domElement);
 
       const camera = new THREE.PerspectiveCamera(14.5, aspect, 0.1, 1000);
       camera.position.set(0, 13.1, 24.7);
@@ -49,13 +50,13 @@ const Scene = () => {
       let screenLight: any | null = null;
       let mixer: THREE.AnimationMixer;
       let isVisible = true;
+      let currentCharacter: THREE.Object3D | null = null;
 
       const clock = new THREE.Clock();
       const light = setLighting(scene);
       const progress = setProgress((value) => setLoading(value));
       const { loadCharacter } = setCharacter(renderer, scene, camera);
 
-      // Intersection Observer to pause rendering when scene is not visible
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -64,18 +65,17 @@ const Scene = () => {
         },
         { threshold: 0.1 }
       );
-      observer.observe(canvasDiv.current);
+      observer.observe(canvasCurrent);
 
       loadCharacter().then((gltf) => {
         if (gltf) {
           const animations = setAnimations(gltf);
           hoverDivRef.current && animations.hover(gltf, hoverDivRef.current);
           mixer = animations.mixer;
-          const character = gltf.scene;
-          setChar(character);
-          scene.add(character);
-          headBone = character.getObjectByName("spine006") || null;
-          screenLight = character.getObjectByName("screenlight") || null;
+          currentCharacter = gltf.scene;
+          scene.add(currentCharacter);
+          headBone = currentCharacter.getObjectByName("spine006") || null;
+          screenLight = currentCharacter.getObjectByName("screenlight") || null;
           progress.loaded().then(() => {
             setTimeout(() => {
               light.turnOnLights();
@@ -85,7 +85,7 @@ const Scene = () => {
         }
       });
 
-      const handleResizeEvent = () => handleResize(renderer, camera, canvasDiv, character!);
+      const handleResizeEvent = () => handleResize(renderer, camera, canvasDiv, currentCharacter!);
       window.addEventListener("resize", handleResizeEvent);
 
       let mouse = { x: 0, y: 0 },
@@ -152,8 +152,8 @@ const Scene = () => {
         renderer.dispose();
         window.removeEventListener("resize", handleResizeEvent);
         document.removeEventListener("mousemove", onMouseMove);
-        if (canvasDiv.current && canvasDiv.current.contains(renderer.domElement)) {
-          canvasDiv.current.removeChild(renderer.domElement);
+        if (canvasCurrent && canvasCurrent.contains(renderer.domElement)) {
+          canvasCurrent.removeChild(renderer.domElement);
         }
         if (landingDiv) {
           landingDiv.removeEventListener("touchstart", onTouchStart);
@@ -161,7 +161,7 @@ const Scene = () => {
         }
       };
     }
-  }, [character]);
+  }, []);
 
   return (
     <>
