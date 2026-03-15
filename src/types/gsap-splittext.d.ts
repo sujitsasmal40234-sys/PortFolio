@@ -1,4 +1,4 @@
-declare module "gsap-trial/SplitText" {
+declare module "gsap/SplitText" {
   export class SplitText {
     constructor(target: any, vars?: any);
     chars: any[];
@@ -7,4 +7,15 @@ declare module "gsap-trial/SplitText" {
     revert(): void;
   }
   export default SplitText;
+}
+
+declare module "gsap/ScrollSmoother" {
+  export class ScrollSmoother {
+    static create(vars: any): ScrollSmoother;
+    static refresh(soft?: boolean): void;
+    scrollTop(value?: number): number;
+    paused(value?: boolean): boolean;
+    scrollTo(target: any, smooth?: boolean, position?: string): void;
+  }
+  export default ScrollSmoother;
 }
